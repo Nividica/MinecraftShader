@@ -19,16 +19,21 @@ varying vec4 lmcoord;
 // Calculated values
 
 // Imports
+#include "common/vsh/world_curvature.glsl"
 
 // Methods
 
 // Main
 void main(){
-  // Calculate position
+  // Calculate position, where the camera is effectively (0,0,0)
+  // This is not world position.
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
-  // Set the projected position
-  gl_Position = gl_ProjectionMatrix * position;	
+  // Simulate a slight world curvature
+  ApplyWorldCurvature(position);
+
+  // Set the projected(screen space) position
+  gl_Position = gl_ProjectionMatrix * position;
 	
   // Set the fog coordinate
 	gl_FogFragCoord = sqrt(position.x * position.x + position.y * position.y + position.z * position.z);
