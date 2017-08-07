@@ -19,6 +19,7 @@ varying vec4 lmcoord;
 // Calculated values
 
 // Imports
+#include "common/config.glsl"
 #include "common/vsh/world_curvature.glsl"
 
 // Methods
@@ -29,8 +30,10 @@ void main(){
   // This is not world position.
   vec4 position = gl_ModelViewMatrix * gl_Vertex;
 
-  // Simulate a slight world curvature
-  ApplyWorldCurvature(position);
+  #ifdef WORLD_CURVATURE
+    // Simulate a slight world curvature
+    ApplyWorldCurvature(position);
+  #endif
 
   // Set the projected(screen space) position
   gl_Position = gl_ProjectionMatrix * position;

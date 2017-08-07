@@ -5,8 +5,7 @@
 #extension GL_ARB_shader_texture_lod : enable
 
 // Defines
-#define FOG_THICKNESS 1.0 // [0.125 0.25 0.5 1.0 2.0 4.0 8.0 16.0]
-#define FOG_DISTANCE 1.0 // [0.125 0.25 0.5 1.0 1.25 1.5 1.75 2.0]
+#include "common/config.glsl"
 
 // Uniforms
 uniform sampler2D texture;
