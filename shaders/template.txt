@@ -1,0 +1,20 @@
+// 
+// Author: Chris McGhee (Nividica)
+
+#version 120
+
+// Defines
+
+// Uniforms
+
+// Varying
+
+// Calculated values
+
+// Imports
+
+// Methods
+
+// Main
+void main(){
+}
