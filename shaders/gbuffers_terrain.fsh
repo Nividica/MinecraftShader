@@ -17,8 +17,6 @@ in vec4 texcoord;
 in vec4 vertexColor;
 in vec4 lmcoord;
 in float mat;
-in vec4 relativePosition;
-in vec3 worldPosition;
 
 // Includes
 
@@ -39,13 +37,8 @@ void main(){
   // Get the lightmap color
   vec4 lightmapColor = texture2D(lightmap, lmcoord.st);
 
-  vec3 ARP = relativePosition.xyz;// + (frameTimeCounter/70.0);
-
   // Calculate overall color
   vec4 color = textureColor* lightmapColor * vertexColor;
-  
-  //color.rg = normalize(tsize.st);
-  //color.b = 0.5;
 
   // Get fog color
   vec3 fogColor = gl_Fog.color.rgb;

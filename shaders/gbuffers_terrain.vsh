@@ -13,8 +13,8 @@ uniform vec3 cameraPosition;
 out vec4 texcoord;
 out vec4 vertexColor;
 out vec4 lmcoord;
-out vec4 relativePosition;
-out vec3 worldPosition;
+//out vec4 relativePosition;
+//out vec3 worldPosition;
 
 // Includes
 #include "common/config.glsl"
@@ -28,8 +28,8 @@ out vec3 worldPosition;
 
 // Main
 void main(){
-  relativePosition = RelativePosition();
-  worldPosition = WorldPosition(relativePosition);
+  vec4 relativePosition = RelativePosition();
+  //worldPosition = WorldPosition(relativePosition);
 
   #ifdef WORLD_CURVATURE
     // Simulate world curvature
