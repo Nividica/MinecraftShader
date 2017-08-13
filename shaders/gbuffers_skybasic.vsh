@@ -6,12 +6,9 @@
 // Defines
 
 // Uniforms
-uniform mat4 gbufferModelView;
-uniform mat4 gbufferModelViewInverse;
-uniform vec3 cameraPosition;
 
 // Inputs / Outputs
-out vec4 color;
+out vec4 vertexColor;
 
 // Includes
 #include "common/trig.glsl"
@@ -24,15 +21,14 @@ out vec4 color;
 // Main
 void main(){
   // Calculate relative position
-	vec4 position = RelativePosition();
-  //RelativePosition();
+	vec4 relativePosition = RelativePosition();
 	
   // Set clip position
-	gl_Position = ClipPosition(position);
+	gl_Position = ClipPosition(relativePosition);
 	
   // Set fog distance
-	gl_FogFragCoord = MagnitudeXYZ(position);	
+	gl_FogFragCoord = MagnitudeXYZ(relativePosition);	
 	
   // Get color
-	color = gl_Color;
+	vertexColor = gl_Color;
 }
