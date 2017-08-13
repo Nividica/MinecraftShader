@@ -1,17 +1,17 @@
 // 
 // Author: Chris McGhee (Nividica)
 
-#version 120
+#version 130
 
 // Defines
 
 // Uniforms
 
-// Varying
+// Inputs / Outputs
 
-// Calculated values
+// Includes
 
-// Imports
+// Private variables
 
 // Methods
 

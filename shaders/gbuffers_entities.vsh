@@ -1,45 +1,51 @@
 // 
 // Author: Chris McGhee (Nividica)
 
-#version 120
+#version 130
 
 // Defines
 
 // Uniforms
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
+uniform vec3 cameraPosition;
 uniform float frameTimeCounter;
 
-// Varying
-varying vec4 texcoord;
-varying vec4 vertexColor;
-varying vec4 lmcoord;
+// Inputs / Outputs
+out vec4 texcoord;
+out vec4 vertexColor;
+out vec4 lmcoord;
+out vec4 relativePosition;
+out vec3 worldPosition;
 
-
-// Calculated values
-
-// Imports
+// Includes
 #include "common/config.glsl"
+#include "common/trig.glsl"
+#include "common/vsh/positions.glsl"
 #include "common/vsh/world_curvature.glsl"
+
+// Private variables
 
 // Methods
 
 // Main
 void main(){
-  // Calculate position, where the camera is effectively (0,0,0)
-  // This is not world position.
-  vec4 position = gl_ModelViewMatrix * gl_Vertex;
+  relativePosition = RelativePosition();
+  worldPosition = WorldPosition(relativePosition);
 
   #ifdef WORLD_CURVATURE
     // Simulate a slight world curvature
-    ApplyWorldCurvature(position);
+    ApplyWorldCurvature(worldPosition, relativePosition);
+
+    // Adjust relative position
+    relativePosition.xyz = ( worldPosition - cameraPosition );
   #endif
 
   // Set the projected(screen space) position
-  gl_Position = gl_ProjectionMatrix * position;
+  gl_Position = ClipPosition(relativePosition);
 	
-  // Set the fog coordinate
-	gl_FogFragCoord = sqrt(position.x * position.x + position.y * position.y + position.z * position.z);
+  // Set the fog distance
+	gl_FogFragCoord = MagnitudeXYZ(relativePosition);
 	
   // Calculate the texture coordinate
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;

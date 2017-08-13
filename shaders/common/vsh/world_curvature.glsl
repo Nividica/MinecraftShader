@@ -1,18 +1,38 @@
-// 
+// Methods to simulate the curvature of a sphear as applied to the world plane.
 // Author: Chris McGhee (Nividica)
 
-uniform float curve_strengths[ 4 ] = {-4096, -2048, -1024, -512};
+#ifndef __NIV_WORLDCURVE__
+  #define __NIV_WORLDCURVE__()
 
-float HorizontalDistance(vec3 position){
-  return (position.x * position.x) + (position.z * position.z);
-}
+  #include "../trig.glsl"
 
-void ApplyVerticalCurvature(inout vec3 position, float distanceFromCenter, float reduction){
-  position.y += distanceFromCenter / reduction;
-}
+  // Apparently uniforms have better performance than consts
+  uniform float curve_strengths[ 4 ] = {-4096, -2048, -1024, -512};
 
-void ApplyWorldCurvature(inout vec3 worldPosition, in vec4 relativePosition){
-  float strength = curve_strengths[WC_AMOUNT];
-  float distanceH = max(HorizontalDistance(relativePosition.xyz) - WC_FLAT_ZONE, 0);
-  ApplyVerticalCurvature(worldPosition, distanceH, strength);
-}
+  // ApplyYCurvature
+  //  Linearly adjusts the Y component of position based on the distance.
+  //  The amount of change can be reduced via reduction.
+  // Arguments:
+  //  position: The vector to adjust.
+  //  distance: How far the vector is from the origin.
+  //  reduction: How much to divide the amount of change by.
+  #define ApplyYCurvature(position,distance,reduction) position.y += (distance / reduction)
+
+  // ApplyWorldCurvature
+  //   Applies a linear curvature to the Y component of worldPosition that is based on
+  //   the distance from the camera.
+  // Arguments:
+  //   worldPosition: Position the vertex is in the world. This value is modified.
+  //   relativePosition: Position the vertex is from the camera.
+  void ApplyWorldCurvature(inout vec3 worldPosition, in vec4 relativePosition){
+    // Get the strength
+    float strength = curve_strengths[WC_AMOUNT];
+
+    // Calculate hoizontal distance
+    float distanceH = max(SquareMagnitudeXZ(relativePosition) - WC_FLAT_ZONE, 0);
+
+    // Apply the curvature
+    ApplyYCurvature(worldPosition, distanceH, strength);
+  }
+
+#endif

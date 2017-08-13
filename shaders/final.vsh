@@ -1,10 +1,21 @@
 // Final shader, applies post-render, to the entire view-port.
 // Author: Chris McGhee (Nividica)
 
-#version 120
+#version 130
+// Defines
 
-varying vec4 texcoord;
+// Uniforms
 
+// Inputs / Outputs
+out vec4 texcoord;
+
+// Includes
+
+// Private variables
+
+// Methods
+
+// Main
 void main(){
   
 	gl_Position = ftransform();

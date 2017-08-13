@@ -1,7 +1,7 @@
 // 
 // Author: Chris McGhee (Nividica)
 
-#version 120
+#version 130
 #extension GL_ARB_shader_texture_lod : enable
 
 // Defines
@@ -11,15 +11,15 @@
 uniform sampler2D texture;
 uniform sampler2D lightmap;
 
-// Varying
-varying vec4 texcoord;
-varying vec4 vertexColor;
-varying vec4 lmcoord;
-varying float mat;
+// Inputs / Outputs
+in vec4 texcoord;
+in vec4 vertexColor;
+in vec4 lmcoord;
+in float mat;
 
-// Calculated values
+// Private variables
 
-// Imports
+// Includes
 
 // Methods
 
