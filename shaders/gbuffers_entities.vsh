@@ -6,8 +6,6 @@
 // Defines
 
 // Uniforms
-uniform mat4 gbufferModelView;
-uniform mat4 gbufferModelViewInverse;
 uniform vec3 cameraPosition;
 uniform float frameTimeCounter;
 
@@ -34,11 +32,8 @@ void main(){
   worldPosition = WorldPosition(relativePosition);
 
   #ifdef WORLD_CURVATURE
-    // Simulate a slight world curvature
-    ApplyWorldCurvature(worldPosition, relativePosition);
-
-    // Adjust relative position
-    relativePosition.xyz = ( worldPosition - cameraPosition );
+    // Simulate world curvature
+    ApplyWorldCurvature(relativePosition);
   #endif
 
   // Set the projected(screen space) position

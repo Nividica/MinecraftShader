@@ -19,12 +19,13 @@
   #define ApplyYCurvature(position,distance,reduction) position.y += (distance / reduction)
 
   // ApplyWorldCurvature
-  //   Applies a linear curvature to the Y component of worldPosition that is based on
+  //   Applies a linear curvature to the Y component of relativePosition that is based on
   //   the distance from the camera.
   // Arguments:
-  //   worldPosition: Position the vertex is in the world. This value is modified.
-  //   relativePosition: Position the vertex is from the camera.
-  void ApplyWorldCurvature(inout vec3 worldPosition, in vec4 relativePosition){
+  //   relativePosition: Position the vertex is from the camera. This value is modified.
+  #define ApplyWorldCurvature(relativePosition) ApplyYCurvature(relativePosition, max(SquareMagnitudeXZ(relativePosition) - WC_FLAT_ZONE, 0), curve_strengths[WC_AMOUNT])
+  /*
+  void ApplyWorldCurvature(inout vec4 relativePosition){
     // Get the strength
     float strength = curve_strengths[WC_AMOUNT];
 
@@ -32,7 +33,7 @@
     float distanceH = max(SquareMagnitudeXZ(relativePosition) - WC_FLAT_ZONE, 0);
 
     // Apply the curvature
-    ApplyYCurvature(worldPosition, distanceH, strength);
-  }
+    ApplyYCurvature(relativePosition, distanceH, strength);
+  }*/
 
 #endif

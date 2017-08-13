@@ -6,8 +6,6 @@
 // Defines
 
 // Uniforms
-uniform mat4 gbufferModelView;
-uniform mat4 gbufferModelViewInverse;
 uniform float frameTimeCounter;
 uniform vec3 cameraPosition;
 
@@ -21,6 +19,7 @@ out vec3 worldPosition;
 // Includes
 #include "common/config.glsl"
 #include "common/trig.glsl"
+#include "common/vsh/positions.glsl"
 #include "common/vsh/world_curvature.glsl"
 
 // Private variables
@@ -29,19 +28,16 @@ out vec3 worldPosition;
 
 // Main
 void main(){
-  // Calculate relativePosition, where the camera is the point of origin
-  // This is not world relativePosition.
-  relativePosition = gbufferModelViewInverse * gl_ModelViewMatrix * gl_Vertex;
-  worldPosition = relativePosition.xyz + cameraPosition.xyz;
+  relativePosition = RelativePosition();
+  worldPosition = WorldPosition(relativePosition);
 
   #ifdef WORLD_CURVATURE
-    // Simulate a slight world curvature
-    ApplyWorldCurvature(worldPosition, relativePosition);
-    relativePosition.xyz = ( worldPosition - cameraPosition );
+    // Simulate world curvature
+    ApplyWorldCurvature(relativePosition);
   #endif
 
   // Set the projected(screen space) relativePosition
-  gl_Position = gl_ProjectionMatrix * gbufferModelView * relativePosition;
+  gl_Position = ClipPosition(relativePosition);
 	
   // Set the fog coordinate
 	gl_FogFragCoord = MagnitudeXYZ(relativePosition);
