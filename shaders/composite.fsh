@@ -142,7 +142,7 @@ void ApplyClouds(inout vec3 color, in vec3 fpos, in int itterations){
   // Again, no idea
   float cosSunUpAngle = clamp(smoothstep(-0.05,0.5,dot(sunVec, upVec)* 0.95 + 0.05) * 10.0, 0.0, 1.0);
 
-  vec3 sunlight = vec3(1.0);
+  vec3 sunlight = vec3(1.0, 0.9, 0.0);
   vec3 moonlight = vec3(0.8,0.8,1.0);
 
   // Cloud color

@@ -18,8 +18,6 @@ uniform vec4 None = vec4(0.0,0.0,0.0,1.0);
 
 // Main
 void main() {
-  // Set buffers to colorless
+/* DRAWBUFFERS:3 */
 	gl_FragData[0] = None;
-	gl_FragData[1] = None;
-	gl_FragData[2] = None;
 }
