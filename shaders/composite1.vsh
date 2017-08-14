@@ -8,9 +8,10 @@
 // Uniforms
 
 // Inputs / Outputs
+out vec4 texcoord;
 
 // Includes
-#include "common/vsh/positions.glsl"
+#include "./common/vsh/positions.glsl"
 
 // Private variables
 
@@ -18,7 +19,6 @@
 
 // Main
 void main(){
-	
-  // Set clip position
-	gl_Position = ClipPosition(RelativePosition());
+  gl_Position = ClipPosition(RelativePosition());
+	texcoord = gl_MultiTexCoord0;
 }
