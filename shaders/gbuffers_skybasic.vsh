@@ -8,9 +8,11 @@
 // Uniforms
 
 // Inputs / Outputs
+out vec4 vertColor;
 
 // Includes
-#include "common/vsh/positions.glsl"
+#include "./common/trig.glsl"
+#include "./common/vsh/positions.glsl"
 
 // Private variables
 
@@ -18,7 +20,8 @@
 
 // Main
 void main(){
-	
-  // Set clip position
-	gl_Position = ClipPosition(RelativePosition());
+  vec4 relativePosition = RelativePosition();
+  gl_Position = ClipPosition(relativePosition);
+  gl_FogFragCoord = MagnitudeXYZ(relativePosition);
+  vertColor = gl_Color;
 }
