@@ -152,7 +152,7 @@ void main(){
     vec2 wind = abs(vec2(frameTimeCounter * 0.000025));
 
     // Calculate inverted rain strength
-    const float rainStrengthInverse = 1.0 - rainStrength;
+    float rainStrengthInverse = 1.0 - rainStrength;
     
     // The higher this number, the more the clouds move as the camera does
     const float CameraMovementStrength = ( CloudHeight / 240.0 );
@@ -173,19 +173,35 @@ void main(){
       // Calculate cloud position
       cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(cosT, 20.0))));
 
-      coord = (cloudPosition.xz + ( cameraPosition.xz * CameraMovementStrength ) ) * 0.000005;
-      coord += wind * (1 + ( 2 * ( CloudPasses - 1 - i ) ) );
+      // Calculate the base coordinate to sample the noise texture from
+      coord = ( cloudPosition.xz
+        // As the camera moves, move the clouds in the opposite direction
+        + ( cameraPosition.xz * CameraMovementStrength )
+      ) * 0.000005;
 
-      
-      // Start by building an additive noise map
+      // Add wind
+      coord += wind * (1 + ( 
+        // Earlier cloud passes get more wind
+        ( CloudPasses - 1 - i )
+        // Wind multipler for layers
+        * 2
+      ));
+
+      // Build an additive noise map
       noise = texture2D(noisetex, coord - wind ).x;
       noise += texture2D(noisetex, coord  * 3.5).x / 3.0;
       noise += texture2D(noisetex, coord  * 6.125).x / 6.125;
       noise += texture2D(noisetex, coord * 12.25).x / 12.25;
 
-      // Standard coverage amount
+      // Sample the noise map to produce a 'coverage' map
+      // High noise value decrease coverage, and low values increase it
+      noise /= 1.0 + (
       // Remove gaps while raining
-      noise /= 1.0 + ( rainStrengthInverse * (texture2D(noisetex, coord / 6.1).x - 1.0) );
+        rainStrengthInverse
+        * (texture2D(noisetex, coord / 6.1).x - 1.0)
+      );
+
+      // Adjust coverage
       noise /= 0.23 * CloudCoverage;
 
       float cOpacity = max(noise - 0.1, 0.0) * 0.04;
@@ -214,22 +230,15 @@ void main(){
       * pow(1.0 - totalcloud, 200.0)
       // Reduce this effect as rain starts to prevent very noticeable hard edges forming as the clouds collapse
       * rainStrengthInverse
-      ));
+    ));
 
-    // The Y axis value
-    float yHeight = clamp( pow( worldVector.y, 0.9 ), 0.0, 1.0 );
+    // The Y axis value, with negative values removed
+    float yHeight = clamp( worldVector.y, 0.0, 1.0 );
 
-    color /= 1.0 + rainStrength;
-
+    // Mix in clouds
     color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight), vec3(0.4545));
     
   }
-  
-  
-
-  
-
-  //color = mix(color,vec3(totalcloud), totalcloud);
   
   gl_FragData[0] = vec4(color,1.0);
 }

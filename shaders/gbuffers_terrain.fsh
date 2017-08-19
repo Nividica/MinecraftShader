@@ -12,6 +12,9 @@ uniform sampler2D texture;
 uniform sampler2D lightmap;
 uniform float frameTimeCounter;
 
+// The percent strength of the rain
+//uniform float rainStrength;
+
 // Inputs / Outputs
 in vec4 texcoord;
 in vec4 vertexColor;
