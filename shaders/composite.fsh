@@ -26,8 +26,27 @@ const float		sunPathRotation				= -40.0; //[-50.0 -40.0 -30.0 -20.0 -10.0 0.0 10
 
 // Defines
 
-#define IS_UNDERWATER (isEyeInWater == 1)
-#define IS_UNDERLAVA  (isEyeInWater == 2)
+// The higher this value, the more coverage there is
+#define CloudCoverage 1
+
+// Values > 1 Make clouds appear translucent in their centers.
+#define CloudDensity 1
+
+// The perceived height the clouds are above the camera.
+#define CloudHeight 600.0
+
+// Number of times to generate clouds
+// Each pass changes the plane the clouds are generated on slightly.
+#define CloudPasses 3
+
+// True if the camera is under water
+#define IsUnderwater (isEyeInWater == 1)
+
+// True if the camera is under lava
+#define IsUnderLava  (isEyeInWater == 2)
+
+// How much to refract they sky by while under water
+#define WaterRefractionIndex 0.817
 
 // Uniforms
 
@@ -63,7 +82,7 @@ uniform int isEyeInWater;
 // 0...11999 = day
 // 12000...24000 = night
 uniform int worldTime;
-float timefract = worldTime;
+//float timefract = worldTime;
 
 // Inputs / Outputs
 
@@ -106,28 +125,26 @@ void main(){
   if(vDepth == 1.0)
   {
     // Calculate the fragment position in the projection space
-    vec4 projectionVector = gbufferProjectionInverse * vec4(vec3(texcoord.st, vDepth) * 2.0 - 1.0, 1.0);
+    vec4 projectionVector = gbufferProjectionInverse * vec4( ( vec3(texcoord.st, vDepth) * 2.0 ) - 1.0, 1.0 );
 
     // Adjust if under water
-	  if (IS_UNDERWATER){ projectionVector.xy *= 0.817; }
+	  if (IsUnderwater){ projectionVector.xy *= WaterRefractionIndex; }
 
     // Map back to the pre-projection plane
     projectionVector /= projectionVector.w;
 
     // Normalize position
     projectionVector = normalize( vec4(projectionVector.xyz, 0.0) );
-    // fPosition
 
     // Calculate the fragment position in the world space
     vec3 worldPosition = (gbufferModelViewInverse * projectionVector).xyz;
-    // tPos
 
     // Normalize position
     vec3 worldVector = normalize(worldPosition);
-    // wVec
     
     // Not really sure...
     // The dot product of the fragment position and the up vector.. What does this net us?
+    // This value ALWAYS seems to be 0
     float cosT = clamp( dot(projectionVector.xyz, upVec), 0.0, 1.0);
 
     // Simulate wind
@@ -135,22 +152,12 @@ void main(){
     vec2 wind = abs(vec2(frameTimeCounter * 0.000025));
 
     // Calculate inverted rain strength
-    float rainStrengthInverse = 1.0 - rainStrength;
-    
-    // The higher this value, the more coverage there is
-    float cloudCoverage = 1;
-
-    // Values > 1 Make clouds appear translucent in their centers.
-    float cloudDensity = 1;// - (rainStrength * 0.5) ;
-    
-    int itterations = 3;
-
-    const float cloudHeight = 600.0;
+    const float rainStrengthInverse = 1.0 - rainStrength;
     
     // The higher this number, the more the clouds move as the camera does
-    const float cameraOffsetMultiplier = ( cloudHeight / 240.0 );
+    const float CameraMovementStrength = ( CloudHeight / 240.0 );
 
-    float height = (cloudHeight / worldVector.y);
+    float height = (CloudHeight / worldVector.y);
 
     // Loop accumulators
     float totalcloud = 0;  
@@ -161,13 +168,13 @@ void main(){
     vec2 coord = vec2(0);
     vec3 cloudPosition = vec3(0.0);
 
-    for (int i = 0; i < itterations; i++){
+    for (int i = 0; i < CloudPasses; i++){
 
       // Calculate cloud position
-      cloudPosition = worldVector * (height - ((i * 150) / itterations * (1.0 - pow(cosT, 20.0))));
+      cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(cosT, 20.0))));
 
-      coord = (cloudPosition.xz + cameraPosition.xz * ( cloudHeight / 240.0 ) ) * 0.000005;
-      coord += wind * (1 + ( 2 * ( itterations - 1 - i ) ) );
+      coord = (cloudPosition.xz + ( cameraPosition.xz * CameraMovementStrength ) ) * 0.000005;
+      coord += wind * (1 + ( 2 * ( CloudPasses - 1 - i ) ) );
 
       
       // Start by building an additive noise map
@@ -179,11 +186,11 @@ void main(){
       // Standard coverage amount
       // Remove gaps while raining
       noise /= 1.0 + ( rainStrengthInverse * (texture2D(noisetex, coord / 6.1).x - 1.0) );
-      noise /= 0.23 * cloudCoverage;
+      noise /= 0.23 * CloudCoverage;
 
       float cOpacity = max(noise - 0.1, 0.0) * 0.04;
       density = pow( max(1.0 - cOpacity * 2.5 , 0.0) , 2.0) / 90.0;
-      density *= 2.0 * cloudDensity;
+      density *= 2.0 * CloudDensity;
 
       totalcloud += density;
     }
@@ -191,8 +198,8 @@ void main(){
     // While raining, max out density
     density *= rainStrengthInverse;
 
-    // Take the average of all cloud itterations
-    totalcloud /= itterations;
+    // Take the average of all cloud CloudPasses
+    totalcloud /= CloudPasses;
 
     // Adjust total cloud by density
     totalcloud = mix(totalcloud , 0.0, pow( 1.0 - density, 100.0 ) - rainStrength );
@@ -210,7 +217,7 @@ void main(){
       ));
 
     // The Y axis value
-    float yHeight = clamp( pow( worldVector.y, 0.5 ), 0.0, 1.0 );
+    float yHeight = clamp( pow( worldVector.y, 0.9 ), 0.0, 1.0 );
 
     color /= 1.0 + rainStrength;
 
