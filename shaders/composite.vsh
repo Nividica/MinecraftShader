@@ -13,7 +13,7 @@ out vec4 texcoord;
 out vec3 upVector;
 
 // Includes
-#include "./common/vsh/positions.glsl"
+#include "./common/vsh/coord_systems.glsl"
 
 // Private variables
 
@@ -21,7 +21,12 @@ out vec3 upVector;
 
 // Main
 void main(){
-  gl_Position = ClipPosition(RelativePosition());
+  // Vertex projection
+	gl_Position = Coords_LocalToClip(gl_Vertex);
+
+  // Get the texture coordinate
 	texcoord = gl_MultiTexCoord0;
+
+  // Calculate the UP vector
 	upVector = normalize(upPosition);
 }

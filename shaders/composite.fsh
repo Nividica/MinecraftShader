@@ -236,8 +236,7 @@ void main(){
     float yHeight = clamp( worldVector.y, 0.0, 1.0 );
 
     // Mix in clouds
-    color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight), vec3(0.4545));
-    
+    color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight), vec3(0.4545));    
   }
   
   gl_FragData[0] = vec4(color,1.0);

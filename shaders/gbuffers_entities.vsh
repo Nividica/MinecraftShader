@@ -6,6 +6,8 @@
 // Defines
 
 // Uniforms
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferModelView;
 uniform vec3 cameraPosition;
 uniform float frameTimeCounter;
 
@@ -19,7 +21,7 @@ out vec4 lmcoord;
 // Includes
 #include "common/config.glsl"
 #include "common/trig.glsl"
-#include "common/vsh/positions.glsl"
+#include "common/vsh/coord_systems.glsl"
 #include "common/vsh/world_curvature.glsl"
 
 // Private variables
@@ -28,19 +30,25 @@ out vec4 lmcoord;
 
 // Main
 void main(){
-  vec4 relativePosition = RelativePosition();
-  //vec3 worldPosition = WorldPosition(relativePosition);
+  // Calculate view position
+  vec4 viewPosition = Coords_LocalToView(gl_Vertex);
 
   #ifdef WORLD_CURVATURE
+    // Calculate world position
+    vec3 worldPosition = Coords_ViewToWorld(viewPosition);
+
     // Simulate world curvature
-    ApplyWorldCurvature(relativePosition);
+    //ApplyWorldCurvature(relativePosition);
+
+    // Convert from world back to view
+    viewPosition = Coords_WorldToView(worldPosition);
   #endif
 
-  // Set the projected(screen space) position
-  gl_Position = ClipPosition(relativePosition);
+  // Convert view to clipping
+  gl_Position = Coords_ViewToClip(viewPosition);
 	
   // Set the fog distance
-	gl_FogFragCoord = MagnitudeXYZ(relativePosition);
+	gl_FogFragCoord = MagnitudeXYZ(viewPosition);
 	
   // Calculate the texture coordinate
 	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;

@@ -12,7 +12,7 @@ out vec4 vertColor;
 
 // Includes
 #include "./common/trig.glsl"
-#include "./common/vsh/positions.glsl"
+#include "./common/vsh/coord_systems.glsl"
 
 // Private variables
 
@@ -20,8 +20,15 @@ out vec4 vertColor;
 
 // Main
 void main(){
-  vec4 relativePosition = RelativePosition();
-  gl_Position = ClipPosition(relativePosition);
-  gl_FogFragCoord = MagnitudeXYZ(relativePosition);
+  // Calculate the view position
+  vec4 viewPosition = Coords_LocalToView(gl_Vertex);
+  
+  // Calculate and set clipping position
+  gl_Position = Coords_ViewToClip(viewPosition);
+
+  // Calculate view distance
+  gl_FogFragCoord = MagnitudeXYZ(viewPosition);
+
+  // Set vertex color
   vertColor = gl_Color;
 }
