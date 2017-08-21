@@ -42,9 +42,9 @@ void main(){
     ApplyWorldCurvature(viewPosition, worldPosition);
 
     // //vec3 upVector = normalize(upPosition);
-    // vec3 staticPoint = vec3(19.0, 72.0, 256.0);
+    // vec3 staticPoint = cameraPosition;//vec3(19.0, 72.0, 256.0);
     // vec3 dirVector = vec3( 0.0, 1.0, 0.0 );
-    // float angle = (MagnitudeXZ( (worldPosition - staticPoint) ) * 0.5 ) * 0.0174533;
+    // float angle = (MagnitudeXZ( (worldPosition - staticPoint) ) * 0.5 ) * 0.0274533;
 
     // float u = dirVector.x;
     // float v = dirVector.y;

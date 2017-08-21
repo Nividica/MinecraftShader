@@ -38,7 +38,7 @@ void main(){
     vec3 worldPosition = Coords_ViewToWorld(viewPosition);
 
     // Simulate world curvature
-    //ApplyWorldCurvature(relativePosition);
+    ApplyWorldCurvature(viewPosition, worldPosition);
 
     // Convert from world back to view
     viewPosition = Coords_WorldToView(worldPosition);

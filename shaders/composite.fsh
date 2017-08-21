@@ -95,6 +95,7 @@ in vec3 upVec;
 // Private vars
 
 // Includes
+#include "./common/config.glsl"
 
 // Methods
 /*
@@ -138,6 +139,11 @@ void main(){
 
     // Calculate the fragment position in the world space
     vec3 worldPosition = (gbufferModelViewInverse * projectionVector).xyz;
+
+    #ifdef WORLD_CURVATURE
+      worldPosition.y += 0.1 * WC_AMOUNT;
+    #endif
+    
 
     // Normalize position
     vec3 worldVector = normalize(worldPosition);
@@ -238,6 +244,8 @@ void main(){
     // Mix in clouds
     color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight), vec3(0.4545));    
   }
+
+  //color.r = texcoord.t;
   
   gl_FragData[0] = vec4(color,1.0);
 }
