@@ -12,12 +12,14 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferModelView;
 uniform vec3 upPosition;
 
+// X = id, Y = renderType, Z = meta
+attribute vec4 mc_Entity;
+
 // Input / Output
 out vec4 texcoord;
 out vec4 vertexColor;
 out vec4 lmcoord;
-//out vec4 relativePosition;
-//out vec3 worldPosition;
+out vec4 block;
 
 // Includes
 #include "common/config.glsl"
@@ -33,6 +35,7 @@ out vec4 lmcoord;
 void main(){
   // Calculate view position
   vec4 viewPosition = Coords_LocalToView(gl_Vertex);
+  block = mc_Entity;
 
   #ifdef WORLD_CURVATURE
     // // Calculate world position

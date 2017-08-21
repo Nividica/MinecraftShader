@@ -19,7 +19,7 @@ uniform float frameTimeCounter;
 in vec4 texcoord;
 in vec4 vertexColor;
 in vec4 lmcoord;
-in float mat;
+in vec4 block;
 
 // Includes
 
@@ -30,9 +30,6 @@ uniform vec4 flatWhite = vec4(1.0);
 
 // Main
 void main(){
-
-  // vec2 tsize = textureSize(texture,0);
-  //vec2 uvPerTex = vec2(0.0, tsize.y / 16384); // 0.015625, 0.03125 :: 1/64, 1/32 :: tsize.x / 65536.0, tsize.y / 16384.0
 
   // Get the texture color
   vec4 textureColor = texture2D(texture, texcoord.st);

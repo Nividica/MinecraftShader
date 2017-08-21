@@ -90,7 +90,7 @@ uniform int worldTime;
 in vec4 texcoord;
 
 // Vector that points up in the world
-in vec3 upVec;
+in vec3 upVector;
 
 // Private vars
 
@@ -143,15 +143,17 @@ void main(){
     #ifdef WORLD_CURVATURE
       worldPosition.y += 0.1 * WC_AMOUNT;
     #endif
-    
 
     // Normalize position
     vec3 worldVector = normalize(worldPosition);
     
-    // Not really sure...
-    // The dot product of the fragment position and the up vector.. What does this net us?
-    // This value ALWAYS seems to be 0
-    float cosT = clamp( dot(projectionVector.xyz, upVec), 0.0, 1.0);
+    
+    // These produce simular numbers.
+    //  Where the 'higher' in the sky (more above the players head) the higher the value
+    //  1.0 Directly above the players head, and 0.0 at/near the horizon
+    //float cosT = clamp( dot(projectionVector.xyz, upVector), 0.0, 1.0);
+    //float yHeight = min(max(worldVector.y - 0.2, 0.0 ) * 5, 1.0); // 5 = 1 / 0.2
+    float yHeight = clamp(worldVector.y, 0.0, 1.0);
 
     // Simulate wind
     // frameTimeCounter * X: As X increases, so does movement.
@@ -177,7 +179,7 @@ void main(){
     for (int i = 0; i < CloudPasses; i++){
 
       // Calculate cloud position
-      cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(cosT, 20.0))));
+      cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(yHeight, 20.0))));
 
       // Calculate the base coordinate to sample the noise texture from
       coord = ( cloudPosition.xz
@@ -238,11 +240,9 @@ void main(){
       * rainStrengthInverse
     ));
 
-    // The Y axis value, with negative values removed
-    float yHeight = clamp( worldVector.y, 0.0, 1.0 );
-
     // Mix in clouds
-    color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight), vec3(0.4545));    
+    color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * yHeight ), vec3(0.4545));
+
   }
 
   //color.r = texcoord.t;

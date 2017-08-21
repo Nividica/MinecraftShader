@@ -7,6 +7,7 @@
 
 // Uniforms
 uniform vec3 upPosition;
+uniform vec3 sunPosition;
 
 // Inputs / Outputs
 out vec4 texcoord;
