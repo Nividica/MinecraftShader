@@ -47,7 +47,7 @@ void main(){
     // //vec3 upVector = normalize(upPosition);
     // vec3 staticPoint = cameraPosition;//vec3(19.0, 72.0, 256.0);
     // vec3 dirVector = vec3( 0.0, 1.0, 0.0 );
-    // float angle = (MagnitudeXZ( (worldPosition - staticPoint) ) * 0.5 ) * 0.0274533;
+    // float angle = (MagnitudeXZ( (worldPosition - staticPoint) ) * 0.5 ) * 0.1274533;
 
     // float u = dirVector.x;
     // float v = dirVector.y;
@@ -88,11 +88,11 @@ void main(){
 
     // worldPosition += staticPoint;
 
-    // //vec2 staticPoint = vec2(worldPosition .x - 20.0, worldPosition.z - 260.0);
-    // //float spOff = 1.0 + 0.01 * sin(frameTimeCounter + (MagnitudeXY(staticPoint) / 10.0) );
-    // //float zOff = sin(frameTimeCounter + (worldPosition.y / 3.0));
-    // //worldPosition.x += spOff;
-    // //worldPosition.z += zOff;
+    //vec2 staticPoint = vec2(worldPosition .x - 20.0, worldPosition.z - 260.0);
+    //float spOff = 1.0 + 0.01 * sin(frameTimeCounter + (MagnitudeXY(staticPoint) / 10.0) );
+    //float zOff = sin(frameTimeCounter + (worldPosition.y / 3.0));
+    //worldPosition.x += spOff;
+    //worldPosition.z += zOff;
 
     // // Convert from world back to view
     viewPosition = Coords_WorldToView(worldPosition);

@@ -12,6 +12,7 @@ uniform vec3 sunPosition;
 // Inputs / Outputs
 out vec4 texcoord;
 out vec3 upVector;
+out vec3 sunVector;
 
 // Includes
 #include "./common/vsh/coord_systems.glsl"
@@ -30,4 +31,5 @@ void main(){
 
   // Calculate the UP vector
 	upVector = normalize(upPosition);
+  sunVector = normalize(sunPosition);
 }

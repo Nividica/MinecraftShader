@@ -48,6 +48,7 @@ void main(){
 
   // Mix with fog
   color.rgb = mix(color.rgb, fogColor, fogIntensity);
+  //color.rgb = vec3(block.z / 16.0);
 
   // Set the frame color
 	gl_FragData[0] = color;
