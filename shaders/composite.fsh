@@ -228,10 +228,10 @@ float AddClouds(inout vec3 color, float vDepth, vec3 worldPosition){
   vec3 powedColor = pow(cloudCol, vec3(2.2));
   color = pow(mix(pow(color, vec3(2.2)), powedColor, totalcloud * 0.25 * yHeight ), vec3(0.4545));
 
-  return 1.0 - ( (90 * density) + rainStrength );
+  return ( (90 * density) + rainStrength );
 }
 
-void AddCelestialObjects(inout vec3 color, vec4 projectionVector, vec3 worldPosition, float fDepth, float vDepth, float cloudDensityInverse){
+void AddCelestialObjects(inout vec3 color, vec4 projectionVector, vec3 worldPosition, float fDepth, float vDepth, float cloudDensity){
   float sunPositionIntensity = dot( projectionVector.xyz, sunVector );
   const float sunSize = 0.0015;
 
@@ -241,11 +241,12 @@ void AddCelestialObjects(inout vec3 color, vec4 projectionVector, vec3 worldPosi
   // Base color
   vec3 sunColor = vec3( 1.0, 1.0, 0.95 );
 
-  // Don't draw on top of transparent objects
+  // Don't draw on top of translucent objects
   if( vDepth > fDepth){ sunCoreOpacity *= 0.5; }
   
   // Hide the sun behind clouds
-  sunCoreOpacity *= cloudDensityInverse;
+  sunCoreOpacity *= 1.0 - clamp( pow(cloudDensity + 0.2, 5) , 0.0, 1.0);
+  sunBloomOpacity *= 1.0 - cloudDensity;
 
   color = mix( color, sunColor, clamp(sunCoreOpacity + sunBloomOpacity, 0.0, 1.0) );
 }
@@ -272,8 +273,8 @@ void main(){
     // Calculate the fragment position in the world space
     vec3 worldPosition = (gbufferModelViewInverse * projectionVector).xyz;
 
-    float cloudDensityInverse = AddClouds(color, vDepth, worldPosition);
-    AddCelestialObjects(color, projectionVector, worldPosition, fDepth, vDepth, cloudDensityInverse);
+    float cloudDensity = AddClouds(color, vDepth, worldPosition);
+    AddCelestialObjects(color, projectionVector, worldPosition, fDepth, vDepth, cloudDensity);
     
   }
 
