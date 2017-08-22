@@ -8,6 +8,7 @@
 // Uniforms
 
 // Inputs / Outputs
+out vec4 texcoord;
 out vec4 vertColor;
 
 // Includes
@@ -20,15 +21,12 @@ out vec4 vertColor;
 
 // Main
 void main(){
-  // Calculate the view position
-  vec4 viewPosition = Coords_LocalToView(gl_Vertex);
-  
   // Calculate and set clipping position
-  gl_Position = Coords_ViewToClip(viewPosition);
-
-  // Calculate view distance
-  gl_FogFragCoord = MagnitudeXYZ(viewPosition);
+  gl_Position = Coords_LocalToClip(gl_Vertex);
 
   // Set vertex color
   vertColor = gl_Color;
+
+  // Calculate texture coordinate
+	texcoord = gl_TextureMatrix[0] * gl_MultiTexCoord0;
 }

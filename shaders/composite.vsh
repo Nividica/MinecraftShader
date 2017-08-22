@@ -1,15 +1,18 @@
-// Final shader, applies post-render, to the entire view-port.
+// 
 // Author: Chris McGhee (Nividica)
 
 #version 130
+
 // Defines
 
 // Uniforms
-uniform vec3 cameraPosition;
+uniform vec3 upPosition;
+uniform vec3 sunPosition;
 
 // Inputs / Outputs
-//in vec4 gl_MultiTexCoord0;
 out vec4 texcoord;
+out vec3 upVector;
+out vec3 sunVector;
 
 // Includes
 #include "./common/vsh/coord_systems.glsl"
@@ -26,4 +29,7 @@ void main(){
   // Get the texture coordinate
 	texcoord = gl_MultiTexCoord0;
 
+  // Calculate the UP vector
+	upVector = normalize(upPosition);
+  sunVector = normalize(sunPosition);
 }
