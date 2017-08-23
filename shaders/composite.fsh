@@ -48,6 +48,11 @@ const float		sunPathRotation				= -40.0; //[-50.0 -40.0 -30.0 -20.0 -10.0 0.0 10
 // How much to refract they sky by while under water
 #define WaterRefractionIndex 0.817
 
+// Time constants
+#define TimeSunrise 0.0
+#define TimeNoon 6000.0
+#define TimeSunset 12000.0
+
 // Uniforms
 
 // Color of the scene thus far.
@@ -69,6 +74,9 @@ uniform mat4 gbufferModelViewInverse;
 // Position of the camera in the world
 uniform vec3 cameraPosition;
 
+// Position of the sun in the world
+//uniform vec3 sunPosition;
+
 // How many frames have gone by
 uniform float frameTimeCounter;
 
@@ -78,12 +86,6 @@ uniform float rainStrength;
 // Is the camera in a liquid?
 uniform int isEyeInWater;
 
-// Time of day
-// 0...11999 = day
-// 12000...24000 = night
-uniform int worldTime;
-//float timefract = worldTime;
-
 // Inputs / Outputs
 
 // Texture coordinate
@@ -91,7 +93,12 @@ in vec4 texcoord;
 
 // Vector that points up in the world
 in vec3 upVector;
+
+// Vector that points toward the sun
 in vec3 sunVector;
+
+// World time
+in float worldTimef;
 
 // Private vars
 
@@ -123,22 +130,29 @@ vec4 CalculateProjectionVector(float vDepth){
   return normalize( vec4(projectionVector.xyz, 0.0) );
 }
 
-float AddClouds(inout vec3 color, float vDepth, vec3 worldPosition){
-  #ifdef WORLD_CURVATURE
-    worldPosition.y += 0.1 * WC_AMOUNT;
-  #endif
+// Attenuate the brightness of the bloom based on time of day.
+// Graph: https://www.desmos.com/calculator/vsqt87vjno
+// 2022.5 comes from: https://www.wolframalpha.com/input/?i=solve+6000+-+pow(++(+12000-6000+)+%2F+x,+8+)  
+float SkyBrightnessAttenuationBasedOnTime() { // Boy thats a mouthfull
+  return ( 
+    (
+      // Subtract 6000 to invert the curve ( 6000 @ noon, 0 at sunrise and sunset )
+      TimeNoon - pow( 
+        (
+          // Clamp the time between sunrise and sunset
+          abs( clamp( worldTimef, TimeSunrise, TimeSunset ) - TimeNoon )
+          // Divide by the magic number such that the result of pow is 
+          // 6000 @ sunrise and sunset, and 0 at noon.
+          / 2022.5
+        )
+      , 8)
+    )
+    // Normalize such that 1.0 @ noon, 0.0 at sunrise and sunset
+    / TimeNoon
+  );
+}
 
-  // Normalize position
-  vec3 worldVector = normalize(worldPosition);
-  
-  
-  // These produce simular numbers.
-  //  Where the 'higher' in the sky (more above the players head) the higher the value
-  //  1.0 Directly above the players head, and 0.0 at/near the horizon
-  //float cosT = clamp( dot(projectionVector.xyz, upVector), 0.0, 1.0);
-  //float yHeight = min(max(worldVector.y - 0.2, 0.0 ) * 5, 1.0); // 5 = 1 / 0.2
-  float yHeight = clamp(worldVector.y, 0.0, 1.0);
-
+float AddClouds(inout vec3 color, float vDepth, vec3 worldVector, float skyDome){
   // Simulate wind
   // frameTimeCounter * X: As X increases, so does movement.
   vec2 wind = abs(vec2(frameTimeCounter * 0.000025));
@@ -163,7 +177,7 @@ float AddClouds(inout vec3 color, float vDepth, vec3 worldPosition){
   for (int i = 0; i < CloudPasses; i++){
 
     // Calculate cloud position
-    cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(yHeight, 20.0))));
+    cloudPosition = worldVector * (height - ((i * 150) / CloudPasses * (1.0 - pow(skyDome, 20.0))));
 
     // Calculate the base coordinate to sample the noise texture from
     coord = ( cloudPosition.xz
@@ -226,29 +240,36 @@ float AddClouds(inout vec3 color, float vDepth, vec3 worldPosition){
 
   // Mix in clouds
   vec3 powedColor = pow(cloudCol, vec3(2.2));
-  color = pow(mix(pow(color, vec3(2.2)), powedColor, totalcloud * 0.25 * yHeight ), vec3(0.4545));
+  color = pow(mix(pow(color, vec3(2.2)), powedColor, totalcloud * 0.25 * skyDome ), vec3(0.4545));
 
   return ( (90 * density) + rainStrength );
 }
 
-void AddCelestialObjects(inout vec3 color, vec4 projectionVector, vec3 worldPosition, float fDepth, float vDepth, float cloudDensity){
+void AddCelestialObjects(inout vec3 color, vec4 projectionVector, float translucent, float cloudDensity, float skyDome, float timeAttenuation){
   float sunPositionIntensity = dot( projectionVector.xyz, sunVector );
   const float sunSize = 0.0015;
 
+  // The disk in the sky
   float sunCoreOpacity = float(sunPositionIntensity > 1.0 - sunSize);
-  float sunBloomOpacity = (sunPositionIntensity) / 2.0;
+
+  // Don't draw core on top of translucent objects
+  sunCoreOpacity *= 1.0 - ( 0.5 * translucent );
+    
+  // Sky brightness around the core
+  float sunBloomOpacity = timeAttenuation * (sunPositionIntensity / 2.0 );
+  
+  // Hide the sun behind clouds
+  cloudDensity *= skyDome;
+  sunCoreOpacity *= 1.0 - clamp( pow(cloudDensity + 0.2, 5) , 0.0, 1.0);
+  sunBloomOpacity *= 1.0 - cloudDensity;
+
+  // Hide the sun behind the horizon
+  skyDome = clamp( log(skyDome * 30.0), 0.0, 1.0 );
 
   // Base color
   vec3 sunColor = vec3( 1.0, 1.0, 0.95 );
 
-  // Don't draw on top of translucent objects
-  if( vDepth > fDepth){ sunCoreOpacity *= 0.5; }
-  
-  // Hide the sun behind clouds
-  sunCoreOpacity *= 1.0 - clamp( pow(cloudDensity + 0.2, 5) , 0.0, 1.0);
-  sunBloomOpacity *= 1.0 - cloudDensity;
-
-  color = mix( color, sunColor, clamp(sunCoreOpacity + sunBloomOpacity, 0.0, 1.0) );
+  color = mix( color, sunColor, skyDome * clamp(sunCoreOpacity + sunBloomOpacity, 0.0, 1.0) );
 }
 
 // Main
@@ -268,13 +289,38 @@ void main(){
   // Is the fragment part of the sky?
   if(vDepth == 1.0)
   {
+    // Calculate the projection vector
     vec4 projectionVector = CalculateProjectionVector(vDepth);
 
     // Calculate the fragment position in the world space
     vec3 worldPosition = (gbufferModelViewInverse * projectionVector).xyz;
 
-    float cloudDensity = AddClouds(color, vDepth, worldPosition);
-    AddCelestialObjects(color, projectionVector, worldPosition, fDepth, vDepth, cloudDensity);
+    #ifdef WORLD_CURVATURE
+      worldPosition.y += 0.1 * WC_AMOUNT;
+    #endif
+
+    // Normalize world position
+    vec3 worldVector = normalize(worldPosition);
+
+    // Calculate attenuation
+    float timeAttenuation = SkyBrightnessAttenuationBasedOnTime();
+
+    // Calculate sky dome opacity
+    // These produce simular numbers.
+    //  Where the 'higher' in the sky (more above the players head) the higher the value
+    //  1.0 Directly above the players head, and 0.0 at/near the horizon
+    //float cosT = clamp( dot(projectionVector.xyz, upVector), 0.0, 1.0);
+    //float yHeight = min(max(worldVector.y - 0.2, 0.0 ) * 5, 1.0); // 5 = 1 / 0.2
+    float skyDome = clamp(worldVector.y, 0.0, 1.0);
+
+    // Is this fragment behind a translucent object?
+    float translucent = float(vDepth > fDepth);
+
+    // Draw clouds and get the density of the clouds at this point
+    float cloudDensity = AddClouds(color, vDepth, worldVector, skyDome);
+
+    // Draw sun, moon, etc
+    AddCelestialObjects(color, projectionVector, translucent, cloudDensity, skyDome, timeAttenuation);
     
   }
 
