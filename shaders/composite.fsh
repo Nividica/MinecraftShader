@@ -49,9 +49,21 @@ const float		sunPathRotation				= -40.0; //[-50.0 -40.0 -30.0 -20.0 -10.0 0.0 10
 #define WaterRefractionIndex 0.817
 
 // Time constants
-#define TimeSunrise 0.0
+
+// Just before the sun peaks over the horizon
+#define TimeSunrise 23000.0
+
+// When the sun is directly overhead
 #define TimeNoon 6000.0
-#define TimeSunset 12000.0
+
+// Just after the sun disapears behind the horizon
+#define TimeSunset 13000.0
+
+// Length of a minecraft day
+#define DayLength 24000.0
+
+// How long to transition from night to day and vice-versa
+#define RiseSetTransitionTime 1500.0
 
 // Uniforms
 
@@ -130,29 +142,41 @@ vec4 CalculateProjectionVector(float vDepth){
   return normalize( vec4(projectionVector.xyz, 0.0) );
 }
 
-// Attenuate the brightness of the bloom based on time of day.
-// Graph: https://www.desmos.com/calculator/vsqt87vjno
-// 2022.5 comes from: https://www.wolframalpha.com/input/?i=solve+6000+-+pow(++(+12000-6000+)+%2F+x,+8+)  
-float SkyBrightnessAttenuationBasedOnTime() { // Boy thats a mouthfull
-  return ( 
-    (
-      // Subtract 6000 to invert the curve ( 6000 @ noon, 0 at sunrise and sunset )
-      TimeNoon - pow( 
-        (
-          // Clamp the time between sunrise and sunset
-          abs( clamp( worldTimef, TimeSunrise, TimeSunset ) - TimeNoon )
-          // Divide by the magic number such that the result of pow is 
-          // 6000 @ sunrise and sunset, and 0 at noon.
-          / 2022.5
-        )
-      , 8)
-    )
-    // Normalize such that 1.0 @ noon, 0.0 at sunrise and sunset
-    / TimeNoon
-  );
+// Todo: Move this function to the vertex shader, the time of day
+// is constant per frame.
+// Calculate a trapezoid-ish 'curve' based on the time of day
+// The curve is 0.0 during night, 1.0 during the day and transitions
+// during sunrise and sunset
+float SolarAttenuation(){
+
+  // Calculate time skew
+  float skew = DayLength - TimeSunrise;
+
+  // Because sunrise is at 23000 we need to wrap the time
+  // so that if the slope crosses the day boundary we get a smooth transition
+  float adjustedTime = mod( worldTimef + skew, DayLength );
+
+  // Grows
+  float incline = ( adjustedTime / RiseSetTransitionTime );
+
+  // Shrinks
+  float decline = ( mod( ( TimeSunset + skew ), DayLength ) / RiseSetTransitionTime ) - incline;
+
+  // Clamp them both so that they are never <0 nor >1
+  incline = clamp( incline, 0.0, 1.0 );
+  decline = clamp( decline, 0.0, 1.0 );
+
+  // The final curve is produced multiplying them both together, such that:
+  // @ (sunrise)          = 0.0
+  // @ (sunrise + length) = 1.0
+  // All points between   = 1.0
+  // @ (sunset - length)  = 1.0
+  // @ (sunset)           = 0.0
+  return incline * decline;
+
 }
 
-float AddClouds(inout vec3 color, float vDepth, vec3 worldVector, float skyDome){
+float AddClouds(inout vec3 color, float vDepth, vec3 worldVector, float skyDome, float solarAttenuation){
   // Simulate wind
   // frameTimeCounter * X: As X increases, so does movement.
   vec2 wind = abs(vec2(frameTimeCounter * 0.000025));
@@ -239,15 +263,18 @@ float AddClouds(inout vec3 color, float vDepth, vec3 worldVector, float skyDome)
   ));
 
   // Mix in clouds
-  vec3 powedColor = pow(cloudCol, vec3(2.2));
-  color = pow(mix(pow(color, vec3(2.2)), powedColor, totalcloud * 0.25 * skyDome ), vec3(0.4545));
+  color = pow(mix(pow(color, vec3(2.2)), pow(cloudCol, vec3(2.2)), totalcloud * 0.25 * skyDome ), vec3(0.4545));
 
   return ( (90 * density) + rainStrength );
 }
 
-void AddCelestialObjects(inout vec3 color, vec4 projectionVector, float translucent, float cloudDensity, float skyDome, float timeAttenuation){
+void AddCelestialObjects(inout vec3 color, vec4 projectionVector, float translucent, float cloudDensity, float skyDome, float solarAttenuation){
   float sunPositionIntensity = dot( projectionVector.xyz, sunVector );
-  const float sunSize = 0.0015;
+  const float baseSunSize = 0.0015;
+  
+  // Make the sun appear bigger at sunrise and sunset
+  float solarAttenuationInverse = 1.0 - solarAttenuation;
+  float sunSize = mix(baseSunSize, 3.14 * baseSunSize, solarAttenuationInverse);
 
   // The disk in the sky
   float sunCoreOpacity = float(sunPositionIntensity > 1.0 - sunSize);
@@ -256,18 +283,17 @@ void AddCelestialObjects(inout vec3 color, vec4 projectionVector, float transluc
   sunCoreOpacity *= 1.0 - ( 0.5 * translucent );
     
   // Sky brightness around the core
-  float sunBloomOpacity = timeAttenuation * (sunPositionIntensity / 2.0 );
+  float sunBloomOpacity = solarAttenuation * (sunPositionIntensity / 2.0 );
   
   // Hide the sun behind clouds
-  cloudDensity *= skyDome;
   sunCoreOpacity *= 1.0 - clamp( pow(cloudDensity + 0.2, 5) , 0.0, 1.0);
   sunBloomOpacity *= 1.0 - cloudDensity;
 
   // Hide the sun behind the horizon
   skyDome = clamp( log(skyDome * 30.0), 0.0, 1.0 );
 
-  // Base color
-  vec3 sunColor = vec3( 1.0, 1.0, 0.95 );
+  // Core color
+  vec3 sunColor = vec3( 1.0, 1.0 - (0.3 * solarAttenuationInverse), 0.95 - (0.4 * solarAttenuationInverse) );
 
   color = mix( color, sunColor, skyDome * clamp(sunCoreOpacity + sunBloomOpacity, 0.0, 1.0) );
 }
@@ -303,7 +329,7 @@ void main(){
     vec3 worldVector = normalize(worldPosition);
 
     // Calculate attenuation
-    float timeAttenuation = SkyBrightnessAttenuationBasedOnTime();
+    float solarAttenuation = SolarAttenuation();
 
     // Calculate sky dome opacity
     // These produce simular numbers.
@@ -317,10 +343,10 @@ void main(){
     float translucent = float(vDepth > fDepth);
 
     // Draw clouds and get the density of the clouds at this point
-    float cloudDensity = AddClouds(color, vDepth, worldVector, skyDome);
+    float cloudDensity = AddClouds(color, vDepth, worldVector, skyDome, solarAttenuation);
 
     // Draw sun, moon, etc
-    AddCelestialObjects(color, projectionVector, translucent, cloudDensity, skyDome, timeAttenuation);
+    AddCelestialObjects(color, projectionVector, translucent, cloudDensity, skyDome, solarAttenuation);
     
   }
 
